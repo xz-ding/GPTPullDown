@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}GPT Pull-down{% endblock %}
+
+{% block content %}
+    <h1>GPT Pull-down</h1>
+    <h5>> Let GPT guess what your protein binds to</h5>
+    <hr style="border-top: 1px solid #ccc;">
+
+    <p>Target Protein: {{ query }}</p>
+    <table class="table">
+    <thead>
+      <tr>
+        <th scope="col">Protein Name</th>
+        <th scope="col">Confidence score (0-100)</th>
+        <th scope="col">Function of the protein</th>
+        <th scope="col">Function of the interaction</th>
+        <th scope="col">Reasoning by GPT</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for protein in choices %}
+        {% set protein_parts = protein.split(';') %}
+        <tr>
+          <td>{{ protein_parts[0].strip() if protein_parts|length > 0 else '' }}</td>
+          <td>{{ protein_parts[1].strip() if protein_parts|length > 1 else '' }}</td>
+          <td>{{ protein_parts[2].strip() if protein_parts|length > 2 else '' }}</td>
+          <td>{{ protein_parts[3].strip() if protein_parts|length > 3 else '' }}</td>
+          <td>{{ protein_parts[4].strip() if protein_parts|length > 4 else '' }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+    </table>
+    <a href="/" class="btn btn-primary">New Search</a>
+
+    <!-- Add the expandable box button -->
+    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#additionalContent" aria-expanded="false" aria-controls="additionalContent">
+      Get purification protocol
+    </button>
+    <hr>
+
+    <!-- Add the expandable content area -->
+    <div class="collapse" id="additionalContent">
+      <div class="card card-body">
+        {% for line in purification_protocol %}
+          <p style="font-size: 0.8rem; color: #666;">{{ line }}</p>
+        {% endfor %}
+
+      </div>
+    </div>
+
+    <hr style="border-top: 1px solid #ccc;">
+    <p style="color: grey;">Powered by GPT-3.5-turbo. Results may vary each time. </p>
+    <p style="color: grey;" Created by Xiaozhe Ding (Twitter: <a href="https://twitter.com/DingXiaozhe" target="_blank">@DingXiaozhe</a>, Web: <a href="https://dingxiaozhe.com" target="_blank">dingxiaozhe.com</a>) with help from with GPT-4.</p>
+    <p style="font-size: 0.8rem; color: grey;">Disclaimer: This website is for educational and entertainment purposes only and should not be used for medical applications. The owner disclaims any liability for actions taken based on the website's content or results. Always consult a healthcare professional for medical concerns. Use of this website indicates acceptance of these terms.</p>
+
+{% endblock %}

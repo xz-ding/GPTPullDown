@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}GPT Pull-down{% endblock %}
+
+{% block content %}
+  <h1>GPT Pull-down</h1>
+  <h5>> Let GPT guess what your protein binds to</h5>
+  <hr style="border-top: 1px solid #ccc;">
+
+  <form method="POST">
+    <div class="form-group">
+      <label for="protein_id">Target Protein Name:</label>
+      <input type="text" class="form-control" id="protein_id" name="query" value="Cellular tumor antigen p53" required>
+    </div>
+    <div class="form-group">
+      <label for="temperature">Wildness (0-1):</label>
+      <input type="number" class="form-control" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.5" required>
+    </div>
+    <div class="form-group">
+      <label for="number_of_results">Number of hits:</label>
+      <input type="number" class="form-control" id="number_of_results" name="number_of_results" min="1" max="10" step="1" value="5" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Submit and wait</button>
+  </form>
+
+  <hr style="border-top: 1px solid #ccc;">
+  <p style="color: grey;">Powered by GPT-3.5-turbo. Results may vary each time. </p>
+  <p style="color: grey;" Created by Xiaozhe Ding (Twitter: <a href="https://twitter.com/DingXiaozhe" target="_blank">@DingXiaozhe</a>, Web: <a href="https://dingxiaozhe.com" target="_blank">dingxiaozhe.com</a>) with help from with GPT-4.</p>
+  <p style="font-size: 0.8rem; color: grey;">Disclaimer: This website is for educational and entertainment purposes only and should not be used for medical applications. The owner disclaims any liability for actions taken based on the website's content or results. Always consult a healthcare professional for medical concerns. Use of this website indicates acceptance of these terms.</p>
+
+
+  {% if error %}
+    <div class="alert alert-danger" role="alert">
+      {{ error }}
+    </div>
+  {% endif %}
+{% endblock %}
