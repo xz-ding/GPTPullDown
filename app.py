@@ -71,7 +71,7 @@ def index():
         #         )
         choices_text = [choice.strip() for choice in response['choices'][0]['message']['content'].strip().split("\n")[0:]]
         #  purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
-        return render_template("results.html", query=query, choices=choices_text)#, purification_protocol=purification_protocol_text)
+        return render_template("results.html", query=query, choices=choices_text, temperature=temperature)#, purification_protocol=purification_protocol_text)
     else:
         return render_template("index.html", error=None)
 
@@ -93,7 +93,7 @@ def get_purification_protocol():
                 }
             ],
             max_tokens=2000,
-            temperature=0.5
+            temperature=temperature
             )
     purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
     return json.dumps(purification_protocol_text)
