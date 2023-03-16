@@ -2,7 +2,6 @@ aiohttp==3.8.4
 aiosignal==1.3.1
 anaconda-client==1.11.0
 anaconda-navigator==2.3.1
-anaconda-project @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_52iciqycjz/croots/recipe/anaconda-project_1660339902500/work
 anyio @ file:///opt/concourse/worker/volumes/live/485b0f52-1188-482a-6285-65a36c8fa8a6/volume/anyio_1644481714856/work/dist
 appdirs==1.4.4
 applaunchservices @ file:///private/var/folders/sy/f16zz6x50xz3113nwtb9bvq00000gp/T/abs_96v71vcny2/croots/recipe/applaunchservices_1661854626389/work
