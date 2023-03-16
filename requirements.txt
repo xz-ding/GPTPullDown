@@ -10,3 +10,4 @@ requests>=2.25.1
 requests-toolbelt==0.10.1
 rfc3986==2.0.0
 rich==13.0.1
+python-dotenv>=0.19.1

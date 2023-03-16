@@ -3,12 +3,15 @@ import requests
 import json
 import openai
 import re
+from dotenv import load_dotenv
+import os
+
+
 
 app = Flask(__name__)
 
-GPT_API_URL = "https://api.openai.com/v1/engines/davinci-codex/completions"
-GPT_API_KEY = "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"
-
+# To load the API key
+load_dotenv()
 
 def is_uniprot_id(input_string):
     uniprot_id_pattern = re.compile(r"^[A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z][0-9]$")
@@ -35,7 +38,7 @@ def index():
         query = request.form["query"]
         temperature = float(request.form["temperature"])
         number_of_results = float(request.form["number_of_results"])
-        openai.api_key = GPT_API_KEY
+        openai.api_key = os.environ.get("GPT_API_KEY")
         response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
