@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 import os
 
 
-
 app = Flask(__name__)
 
 # To load the API key
@@ -55,26 +54,49 @@ def index():
                 temperature=temperature
                 )
 
-        purification_protocol = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You act as a biochemical protocol generater. You will create a brief, step-by-step protocol to express and purify a protein. You will choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol."
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Generate a brief, step-by-step protocol to express and purify {query}. Please choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol. Please just give the protocol and do not make other comments."
-                    }
-                ],
-                max_tokens=2000,
-                temperature=temperature
-                )
+        # purification_protocol = openai.ChatCompletion.create(
+        #         model="gpt-3.5-turbo",
+        #         messages=[
+        #             {
+        #                 "role": "system",
+        #                 "content": "You act as a biochemical protocol generater. You will create a brief, step-by-step protocol to express and purify a protein. You will choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol."
+        #             },
+        #             {
+        #                 "role": "user",
+        #                 "content": f"Generate a brief, step-by-step protocol to express and purify {query}. Please choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol. Please just give the protocol and do not make other comments."
+        #             }
+        #         ],
+        #         max_tokens=2000,
+        #         temperature=temperature
+        #         )
         choices_text = [choice.strip() for choice in response['choices'][0]['message']['content'].strip().split("\n")[0:]]
-        purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
-        return render_template("results.html", query=query, choices=choices_text, purification_protocol=purification_protocol_text)
+        #  purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
+        return render_template("results.html", query=query, choices=choices_text)#, purification_protocol=purification_protocol_text)
     else:
         return render_template("index.html", error=None)
+
+@app.route("/get_purification_protocol", methods=["POST"])
+def get_purification_protocol():
+    query = request.form["query"]
+    temperature = float(request.form["temperature"])
+    openai.api_key = os.environ.get("GPT_API_KEY")
+    purification_protocol = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You act as a biochemical protocol generater. You will create a brief, step-by-step protocol to express and purify a protein. You will choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol."
+                },
+                {
+                    "role": "user",
+                    "content": f"Generate a brief, step-by-step protocol to express and purify {query}. Please choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol. Please just give the protocol and do not make other comments."
+                }
+            ],
+            max_tokens=2000,
+            temperature=0.5
+            )
+    purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
+    return json.dumps(purification_protocol_text)
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -33,25 +33,48 @@
     </table>
     <a href="/" class="btn btn-primary">New Search</a>
 
-    <!-- Add the expandable box button -->
-    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#additionalContent" aria-expanded="false" aria-controls="additionalContent">
-      Get purification protocol
-    </button>
+    <!-- Add the button to fetch the purification protocol -->
+    <button class="btn btn-secondary" id="getPurificationProtocolBtn">Get purification protocol</button>
     <hr>
-
-    <!-- Add the expandable content area -->
-    <div class="collapse" id="additionalContent">
-      <div class="card card-body">
-        {% for line in purification_protocol %}
-          <p style="font-size: 0.8rem; color: #666;">{{ line }}</p>
-        {% endfor %}
-
+    <div class="accordion" id="purificationProtocolAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+            Purification Protocol
+          </button>
+        </h2>
+        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#purificationProtocolAccordion">
+          <div class="accordion-body" id="purificationProtocol"></div>
+        </div>
       </div>
     </div>
-
     <hr style="border-top: 1px solid #ccc;">
-    <p style="color: grey;">Powered by GPT-3.5-turbo. Results may vary each time. </p>
-    <p style="color: grey;">Created by Xiaozhe Ding (Twitter: <a href="https://twitter.com/DingXiaozhe" target="_blank">@DingXiaozhe</a>, Web: <a href="https://dingxiaozhe.com" target="_blank">dingxiaozhe.com</a>) with help from with GPT-4.</p>
-    <p style="font-size: 0.8rem; color: grey;">Disclaimer: This website is for research and entertainment purposes only and should not be used for medical applications. The owner disclaims any liability for actions taken based on the website's content or results. Always consult a healthcare professional for medical concerns. Use of this website indicates acceptance of these terms.</p>
+{% endblock %}
 
+{% block scripts %}
+    <script>
+      $("#getPurificationProtocolBtn").on("click", function() {
+        const query = "{{ query }}";
+        const temperature = {{ temperature }};
+        $.ajax({
+          url: "/get_purification_protocol",
+          type: "POST",
+          data: {
+            query: query,
+            temperature: temperature
+          },
+          success: function(response) {
+            const protocol = JSON.parse(response);
+            let protocolHTML = "";
+            for (let line of protocol) {
+              protocolHTML += `<p>${line}</p>`;
+            }
+            $("#purificationProtocol").html(protocolHTML);
+            if ($("#collapseOne").hasClass("collapse")) {
+              $("#collapseOne").collapse("show");
+            }
+          }
+        });
+      });
+    </script>
 {% endblock %}
