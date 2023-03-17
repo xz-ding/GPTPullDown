@@ -5,30 +5,30 @@ import openai
 import re
 from dotenv import load_dotenv
 import os
-from flask_talisman import Talisman
+# from flask_talisman import Talisman
 
 app = Flask(__name__)
 
-csp = {
-    'default-src': [
-        '\'self\'',
-        'stackpath.bootstrapcdn.com',
-        'code.jquery.com',
-        'cdn.jsdelivr.net',
-    ],
-    'img-src': '*',
-    'style-src': [
-        '\'self\'',
-        'cdn.jsdelivr.net',
-        '\'unsafe-inline\'',
-    ],
-    'script-src': [
-        '\'self\'',
-        'code.jquery.com',
-        'cdn.jsdelivr.net',
-    ],
-}
-talisman = Talisman(app, content_security_policy=csp)
+# csp = {
+#     'default-src': [
+#         '\'self\'',
+#         'stackpath.bootstrapcdn.com',
+#         'code.jquery.com',
+#         'cdn.jsdelivr.net',
+#     ],
+#     'img-src': '*',
+#     'style-src': [
+#         '\'self\'',
+#         'cdn.jsdelivr.net',
+#         '\'unsafe-inline\'',
+#     ],
+#     'script-src': [
+#         '\'self\'',
+#         'code.jquery.com',
+#         'cdn.jsdelivr.net',
+#     ],
+# }
+# talisman = Talisman(app, content_security_policy=csp)
 
 # To load the API key
 load_dotenv()
