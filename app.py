@@ -5,9 +5,10 @@ import openai
 import re
 from dotenv import load_dotenv
 import os
-
+from flask_talisman import Talisman  # Add this import
 
 app = Flask(__name__)
+Talisman(app)  # Initialize Talisman
 
 # To load the API key
 load_dotenv()
