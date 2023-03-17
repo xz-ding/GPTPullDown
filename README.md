@@ -2,6 +2,8 @@
 
 GPT Pull-Down is a web app that allows users to predict protein binding partners using the GPT language model. The app takes a protein name as input, along with user-selected parameters, and returns a list of predicted binding partners along with additional information.
 
+Link: https://www.GPTpull-down.online
+
 The current version is powered by GPT-3.5-turbo.
 
 ## How to Use
