@@ -64,14 +64,14 @@ def index():
                 messages=[
                     {
                         "role": "system",
-                        "content": "You act as a biochemist. You will look into scientific literatures and look for potential protein binding partners for a protein. You will also evaluate the confidence of the binding interaction based on the literatures."
+                        "content": "You are a knowledgable and critical biochemist. You will look into scientific literatures and help to look for potential protein binding partners for a protein. You will also evaluate the confidence of the binding interaction based on the literatures and give a score between 0-100 (an example of a score-100 interaction: CD4-gp120; an example of a score-0 interaction: hemoglobin-hexokinase. You should also be prepared to answer the function of the candidate protein, the function of the interaction, and your reasoning why this protein is a potential binder. You follow the format requirements strictly and do not give extra comments or labels."
                     },
                     {
                         "role": "user",
-                        "content": f"Find potential protein binding partners for a protein named {query}. List the names of top {number_of_results} protein binder candidates, a condifence score (ranging 0-100) on how likely you think the binding is true, the biological function of the protein binder, the possible biological funcion of the binding interaction, and your reasoning on why this is a true binder. Make sure that your output follows this format: each candidate protein is reported in one row, in each row you separate the name of the protein binder, a condifence score (ranging 0-100) on how likely you think the binding is true, the function of the protein binder, the possible funcion of the binding interaction, and your reasoning on why this is a true binder by a semicolon (you only need to give the result themselves and do not need to explain what they are). Do not give a numbered index for each row. No extra comments are needed."
+                        "content": f"Find potential protein binding partners for a protein named {query} if {query} is a name of a real protein. List the names of top {number_of_results} protein binder candidates, a condifence score (ranging 0-100) on how likely you think the binding is true, the biological function of the protein binder, the possible biological funcion of the binding interaction, and your reasoning on why this is a true binder. Make sure that your output follows this format: each candidate protein is reported in one row, in each row you separate the name of the protein binder, a condifence score (ranging 0-100) on how likely you think the binding is true, the function of the protein binder, the possible funcion of the binding interaction, and your reasoning on why this is a true binder by a semicolon (you only need to give the result themselves and do not need to explain what they are). Do not give a numbered index for each row. No extra comments are needed. In case when the input {query} is not a name of a real protein, return two words: No Hits."
                     }
                 ],
-                max_tokens=500,
+                max_tokens=1000,
                 temperature=temperature
                 )
 
