@@ -34,10 +34,43 @@
       {% endfor %}
     </tbody>
     </table>
+
+
+    <!-- New search button -->
     <a href="/" class="btn btn-primary">New Search</a>
 
-    <!-- Replace the existing button with the following one -->
-    <!-- <button class="btn btn-secondary" id="getPurificationProtocolBtn">Get purification protocol</button> -->
+    <!-- Expandable box -->
+    <script>
+      function toggleExpandableText() {
+        const expandableText = document.getElementById("expandableText");
+        if (expandableText.style.display === "none") {
+          expandableText.style.display = "block";
+        } else {
+          expandableText.style.display = "none";
+        }
+      }
+    </script>
+
+    <style>
+    .expandable-text {
+      display: none;
+      font-size: 0.95rem;
+      color: grey;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    </style>
+
+    <button onclick="toggleExpandableText()" class="btn btn-outline-secondary">Pro Tips</button>
+    <div id="expandableText" class="expandable-text" style="display: none;">
+      1. <strong>Results are for reference and inspiration only.</strong> Results may be inaccurate. Always verify with original papers and specialized databases.<br>
+      2. <strong>Adjust the "wildness" parameter as needed.</strong> Higher values yield more imaginative results, while lower values are more conservative. This corresponds to the temperature/randomness parameter in GPT.<br>
+      3. <strong>Search again if unsatisfied with results.</strong> GPT outputs are random, so different results may appear each time. Trying different protein names can also help.<br>
+      4. <strong>GPT Pull-down doesn't provide reference literature.</strong> GPT knows much but is not good at tracing information sources. It can sometimes provide fabricated answers when pressed for a source.<br>
+      5. <strong>GPT Pull-down will improve.</strong> The current version uses GPT-3.5-turbo. GPT-4 is expected to perform better in answering biology questions, so future GPT Pull-down improvements can be anticipated.<br>
+    </div>
+
+
 
     <hr style="border-top: 1px solid #ccc;">
     <p style="font-size: 0.95rem; color: grey;">Powered by GPT-3.5-turbo. Results may vary each time. </p>
@@ -45,15 +78,4 @@
     <p style="font-size: 0.8rem; color: grey;">Disclaimer: This website is for educational and entertainment purposes only and should not be used for medical applications. The owner disclaims any liability for actions taken based on the website's content or results. Always consult a healthcare professional for medical concerns. Use of this website indicates acceptance of these terms.</p>
 
 <!-- Add the rest of the content -->
-{% endblock %}
-
-{% block scripts %}
-    <script>
-      $("#getPurificationProtocolBtn").on("click", function() {
-        const query = encodeURIComponent("{{ query }}");
-        const temperature = {{ "{:.1f}".format(temperature) }};
-        const url = `/purification_protocol?query=${query}&temperature=${temperature}`;
-        window.open(url, "_blank");
-      });
-    </script>
 {% endblock %}
