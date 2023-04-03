@@ -7,7 +7,7 @@ Link: https://www.GPTpull-down.online
 The current version is powered by GPT-3.5-turbo.
 
 ## How to Use
-1. Enter the Protein Name or UniProt ID
+1. Enter the Protein Name
 2. Adjust the parameters as needed
 3. Click "Submit" to get the predictions
 
