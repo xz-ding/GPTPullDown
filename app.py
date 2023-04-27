@@ -60,7 +60,7 @@ def index():
         number_of_results = float(request.form["number_of_results"])
         openai.api_key = os.environ.get("GPT_API_KEY")
         response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 # messages=[
                 #     {
                 #         "role": "system",
