@@ -86,17 +86,17 @@ def index():
                 messages = [
                     {
                         "role": "system",
-                        "content": "You are a knowledgeable and critical biochemist. You will search scientific literature for potential protein binding partners for a given protein. Evaluate the confidence of the binding interaction based on the literature, scoring it between 0-100 (e.g., CD4-gp120 is a 100, hemoglobin-hexokinase is a 0). Be prepared to explain the function of the candidate protein, the function of the interaction, and your reasoning for considering it a potential binder. Strictly adhere to the format requirements. You start your response with the first binder and end it with the last binder without adding introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes"
+                        "content": "You are a knowledgeable and critical biochemist. You will search scientific literature for potential protein binding partners for a given protein. Evaluate the confidence of the binding interaction based on the literature, scoring it between 0-100 (e.g., CD4-gp120 is a 100, hemoglobin-hexokinase is a 0).  Strictly adhere to the format requirements."#" Be prepared to explain the function of the candidate protein, the function of the interaction, and your reasoning for considering it a potential binder. You start your response with the first binder and end it with the last binder without adding introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes"
                     },
                     {
                         "role": "user",
-                        "content": f"Identify the top {number_of_results} potential protein binding partners for {query}. For each protein binder, provide the following five pieces of information separated by semicolons: the protein binder name, a confidence score (0-100) for the likelihood of the binding, the biological function of the protein binder, the possible biological function of the binding interaction, and your reasoning for considering it a true binder. Ensure that all five semicolon-separated pieces of information are present for each binder. Start your response directly with the first binder and end your response with the last binder. Do not provide introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes." #The exception case for the format requirements: in case when the input {query} does not describe a real protein, return with an additional line of warning at the end: 'Note: GPT is uncertain whether { query } is a real protein.  Interpret the results with caution.'
+                        "content": f"Identify the top {number_of_results} potential protein binding partners for {query}. For each protein binder, provide the following five pieces of information separated by semicolons: the protein binder name, a confidence score (0-100) for the likelihood of the binding, the biological function of the protein binder, the possible biological function of the binding interaction, and your reasoning for considering it a true binder. Ensure that all five semicolon-separated pieces of information are present for each binder. Start your response directly with the first binder and end your response with the last binder. Do not provide introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes. You can refuse to answer if you do not know the target protein." #The exception case for the format requirements: in case when the input {query} does not describe a real protein, return with an additional line of warning at the end: 'Note: GPT is uncertain whether { query } is a real protein.  Interpret the results with caution.'
                     }
                 ],
 
 
 
-                max_tokens=1000,
+                max_tokens=600,
                 temperature=temperature
                 )
 
@@ -113,7 +113,7 @@ def get_purification_protocol():
     temperature = float(request.form["temperature"])
     openai.api_key = os.environ.get("GPT_API_KEY")
     purification_protocol = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=[
                 {
                     "role": "system",
