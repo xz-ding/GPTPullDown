@@ -47,7 +47,7 @@
       const timerElement = document.getElementById("timer");
 
       function updateTimer() {
-        timerElement.innerHTML = "Waiting for response: " + timePast + "/60 seconds";
+        timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds";
         if (timePast === 30) {
           clearInterval(countdown);
         } else {
