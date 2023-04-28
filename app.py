@@ -58,9 +58,10 @@ def index():
         query = request.form["query"]
         temperature = float(request.form["temperature"])
         number_of_results = float(request.form["number_of_results"])
+        model_selection = str(request.form["model"])
         openai.api_key = os.environ.get("GPT_API_KEY")
         response = openai.ChatCompletion.create(
-                model="gpt-4",
+                model=model_selection,
 
                 messages = [
                     {
@@ -69,12 +70,12 @@ def index():
                     },
                     {
                         "role": "user",
-                        "content": f"Identify the top {number_of_results} potential protein binding partners for {query}. For each protein binder, provide the following five pieces of information separated by semicolons: the protein binder name, a confidence score (0-100) for the likelihood of the binding, the biological function of the protein binder, the possible biological function of the binding interaction, and your reasoning for considering it a true binder. Ensure that all five semicolon-separated pieces of information are present for each binder. Start your response directly with the first binder and end your response with the last binder. Do not provide introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes. You can refuse to answer if you do not know the target protein." #The exception case for the format requirements: in case when the input {query} does not describe a real protein, return with an additional line of warning at the end: 'Note: GPT is uncertain whether { query } is a real protein.  Interpret the results with caution.'
+                        "content": f"Identify the top {number_of_results} potential protein binding partners for {query}. For each protein binder, provide the following five pieces of information separated by semicolons: the protein binder name, a confidence score (0-100) for the likelihood of the binding, the biological function of the protein binder, the possible biological function of the binding interaction, and your reasoning for considering it a true binder. Ensure that all five semicolon-separated pieces of information are present for each binder. Start your response directly with the first binder and end your response with the last binder. Do not provide introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes. You can refuse to answer if you do not find any relavant info in literature." #The exception case for the format requirements: in case when the input {query} does not describe a real protein, return with an additional line of warning at the end: 'Note: GPT is uncertain whether { query } is a real protein.  Interpret the results with caution.'
                     }
                 ],
 
 
-                max_tokens= int(120 + number_of_results * 30),
+                max_tokens=int(120 + number_of_results * 30),
                 temperature=temperature
                 )
 
