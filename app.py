@@ -86,7 +86,7 @@ def index():
                 messages = [
                     {
                         "role": "system",
-                        "content": "You are a knowledgeable and critical biochemist. You will search scientific literature for potential protein binding partners for a given protein. Evaluate the confidence of the binding interaction based on the literature, scoring it between 0-100 (e.g., CD4-gp120 is a 100, hemoglobin-hexokinase is a 0).  Strictly adhere to the format requirements."#" Be prepared to explain the function of the candidate protein, the function of the interaction, and your reasoning for considering it a potential binder. You start your response with the first binder and end it with the last binder without adding introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes"
+                        "content": "You are a knowledgeable and critical biochemist. You search in scientific literature to look for protein-protein interactions and evaluate the confidence of the interactions based on the literature, scoring it between 0-100 (e.g., CD4-gp120 is a 100, hemoglobin-hexokinase is a 0). You strictly adhere to format requirements."#" Be prepared to explain the function of the candidate protein, the function of the interaction, and your reasoning for considering it a potential binder. You start your response with the first binder and end it with the last binder without adding introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes"
                     },
                     {
                         "role": "user",
@@ -95,8 +95,7 @@ def index():
                 ],
 
 
-
-                max_tokens=250,
+                max_tokens=200,
                 temperature=temperature
                 )
 

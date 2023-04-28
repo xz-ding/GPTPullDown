@@ -47,12 +47,16 @@
       const timerElement = document.getElementById("timer");
 
       function updateTimer() {
-        timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds";
+          if (timePast <= 20) {
+            timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds";
+          } else {
+            timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds. <br> GPT is busy now. Please retry if timeout occurs.";
+          }
+
         if (timePast === 30) {
           clearInterval(countdown);
         } else {
           timePast += 1;
-          $.get("/"); // sending a request to the server every 1 seconds
         }
       }
 
@@ -60,15 +64,4 @@
     }
   </script>
 
-  <!-- <script>
-  function keepAlive() {
-    // Send a request to the server every 15 seconds
-    setInterval(function () {
-      $.get("/");
-  }, 15 * 1000);
-  }
-
-  // Call the function to start sending requests
-  keepAlive();
-</script> -->
 {% endblock %}
