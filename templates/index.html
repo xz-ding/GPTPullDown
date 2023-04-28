@@ -50,7 +50,7 @@
           if (timePast <= 20) {
             timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds";
           } else {
-            timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds. <br>[Warning] GPT is busy now. Please retry if timeout occurs.";
+            timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds. <br>[Warning: GPT is busy now. Please retry if timeout occurs.]";
           }
 
         if (timePast === 30) {
