@@ -21,7 +21,7 @@
     </div>
     <div class="form-group">
       <label for="number_of_results">Number of hits (1-10):</label>
-      <input type="number" class="form-control" id="number_of_results" name="number_of_results" min="1" max="10" step="1" value="5" required>
+      <input type="number" class="form-control" id="number_of_results" name="number_of_results" min="1" max="10" step="1" value="3" required>
     </div>
     <button type="submit" class="btn btn-primary" onclick="startTimer()">Submit and wait</button>
     </form>
@@ -48,7 +48,7 @@
 
       function updateTimer() {
         timerElement.innerHTML = "Waiting for response: " + timePast + "/60 seconds";
-        if (timePast === 60) {
+        if (timePast === 30) {
           clearInterval(countdown);
         } else {
           timePast += 1;
