@@ -52,6 +52,7 @@
           clearInterval(countdown);
         } else {
           timePast += 1;
+          $.get("/"); // sending a request to the server every 1 seconds
         }
       }
 
@@ -59,7 +60,7 @@
     }
   </script>
 
-  <script>
+  <!-- <script>
   function keepAlive() {
     // Send a request to the server every 15 seconds
     setInterval(function () {
@@ -69,5 +70,5 @@
 
   // Call the function to start sending requests
   keepAlive();
-</script>
+</script> -->
 {% endblock %}
