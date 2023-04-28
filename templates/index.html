@@ -20,8 +20,8 @@
       <input type="number" class="form-control" id="temperature" name="temperature" min="0" max="1" step="0.1" value="0.5" required>
     </div>
     <div class="form-group">
-      <label for="number_of_results">Number of hits (1-10):</label>
-      <input type="number" class="form-control" id="number_of_results" name="number_of_results" min="1" max="10" step="1" value="3" required>
+      <label for="number_of_results">Number of hits (1-5):</label>
+      <input type="number" class="form-control" id="number_of_results" name="number_of_results" min="1" max="5" step="1" value="3" required>
     </div>
     <button type="submit" class="btn btn-primary" onclick="startTimer()">Submit and wait</button>
     </form>
@@ -50,7 +50,7 @@
           if (timePast <= 20) {
             timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds";
           } else {
-            timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds. <br>[Warning: GPT is busy now. Please retry if timeout occurs.]";
+            timerElement.innerHTML = "Waiting for response: " + timePast + "/30 seconds. <br>[Warning: GPT is busy now. If timeout occurs, click the 'Back' button on your browser and try again.]";
           }
 
         if (timePast === 30) {
