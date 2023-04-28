@@ -96,7 +96,7 @@ def index():
 
 
 
-                max_tokens=600,
+                max_tokens=400,
                 temperature=temperature
                 )
 

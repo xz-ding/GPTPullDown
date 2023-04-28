@@ -23,7 +23,7 @@
       <label for="number_of_results">Number of hits (1-10):</label>
       <input type="number" class="form-control" id="number_of_results" name="number_of_results" min="1" max="10" step="1" value="5" required>
     </div>
-    <button type="submit" class="btn btn-primary" onclick="startCountdown()">Submit and wait</button>
+    <button type="submit" class="btn btn-primary" onclick="startTimer()">Submit and wait</button>
     </form>
 
     <div id="timer"></div>
@@ -42,20 +42,32 @@
   {% endif %}
 
   <script>
-    function startCountdown() {
-      let timeRemaining = 60;
+    function startTimer() {
+      let timePast = 0;
       const timerElement = document.getElementById("timer");
 
       function updateTimer() {
-        timerElement.innerHTML = "Time remaining: " + timeRemaining + " seconds";
-        if (timeRemaining === 0) {
+        timerElement.innerHTML = "Waiting for response: " + timePast + "/60 seconds";
+        if (timePast === 60) {
           clearInterval(countdown);
         } else {
-          timeRemaining--;
+          timePast += 1;
         }
       }
 
       const countdown = setInterval(updateTimer, 1000);
     }
   </script>
+
+  <script>
+  function keepAlive() {
+    // Send a request to the server every 15 seconds
+    setInterval(function () {
+      $.get("/");
+  }, 15 * 1000);
+  }
+
+  // Call the function to start sending requests
+  keepAlive();
+</script>
 {% endblock %}
