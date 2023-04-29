@@ -57,7 +57,7 @@ def index():
     if request.method == "POST":
         query = request.form["query"]
         temperature = float(request.form["temperature"])
-        number_of_results = float(request.form["number_of_results"])
+        number_of_results = int(request.form["number_of_results"])
         model_selection = str(request.form["model"])
         openai.api_key = os.environ.get("GPT_API_KEY")
         response = openai.ChatCompletion.create(
