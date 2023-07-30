@@ -75,7 +75,7 @@ def index():
                 ],
 
 
-                max_tokens=int(200 + number_of_results * 50),
+                max_tokens=int(300 + number_of_results * 75),
                 temperature=temperature
                 )
 
@@ -92,7 +92,7 @@ def get_purification_protocol():
     temperature = float(request.form["temperature"])
     openai.api_key = os.environ.get("GPT_API_KEY")
     purification_protocol = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4-32k",
             messages=[
                 {
                     "role": "system",
