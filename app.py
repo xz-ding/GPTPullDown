@@ -75,7 +75,7 @@ def index():
                 ],
 
 
-                max_tokens=int(180 + number_of_results * 45),
+                max_tokens=int(190 + number_of_results * 45),
                 temperature=temperature
                 )
 
