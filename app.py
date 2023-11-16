@@ -75,7 +75,7 @@ def index():
                 ],
 
 
-                max_tokens=int(200 + number_of_results * 50),
+                max_tokens=int(200 + number_of_results * 60), #for GPT-4, use 180 + n * 45
                 temperature=temperature
                 )
 
