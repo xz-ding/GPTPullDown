@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, send_from_directory
 import requests
 import json
 import openai
@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 # from flask_talisman import Talisman
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.')
 
 # csp = {
 #     'default-src': [
@@ -32,6 +32,10 @@ app = Flask(__name__)
 
 # To load the API key
 load_dotenv()
+
+@app.route('/.well-known/pki-validation/<filename>')
+def serve_dcv_file(filename):
+    return send_from_directory('.well-known/pki-validation', filename)
 
 def is_uniprot_id(input_string):
     uniprot_id_pattern = re.compile(r"^[A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z][0-9]$")
