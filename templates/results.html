@@ -11,6 +11,11 @@
     <hr style="border-top: 1px solid #ccc;">
 
     <p>Target Protein: {{ query }}</p>
+    {% if warning %}
+      <div class="alert alert-warning" role="alert">
+        {{ warning }}
+      </div>
+    {% endif %}
     <table class="table">
     <thead>
       <tr>
@@ -22,14 +27,17 @@
       </tr>
     </thead>
     <tbody>
-      {% for protein in choices %}
-        {% set protein_parts = protein.split(';') %}
+      {% for binder in binders %}
         <tr>
-          <td>{{ protein_parts[0].strip() if protein_parts|length > 0 else '' }}</td>
-          <td>{{ protein_parts[1].strip() if protein_parts|length > 1 else '' }}</td>
-          <td>{{ protein_parts[2].strip() if protein_parts|length > 2 else '' }}</td>
-          <td>{{ protein_parts[3].strip() if protein_parts|length > 3 else '' }}</td>
-          <td>{{ protein_parts[4].strip() if protein_parts|length > 4 else '' }}</td>
+          <td>{{ binder.name }}</td>
+          <td>{{ binder.confidence_score }}</td>
+          <td>{{ binder.protein_function }}</td>
+          <td>{{ binder.interaction_function }}</td>
+          <td>{{ binder.reasoning }}</td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="5">No binding partners were returned.</td>
         </tr>
       {% endfor %}
     </tbody>
@@ -74,7 +82,7 @@
     <hr style="border-top: 1px solid #ccc;">
     <p style="font-size: 0.95rem; color: grey;">Results may vary each time. </p>
     <p style="font-size: 0.95rem; color: grey;">Created by <a href="https://www.dingxiaozhe.com" target="_blank">Xiaozhe Ding</a> with help from GPT-4. About me: Protein engineer in <a href="https://glab.caltech.edu/" target="_blank">GradinaruLab@Caltech</a> (Twitter <a href="https://twitter.com/DingXiaozhe" target="_blank">@DingXiaozhe</a>).</p>
-    <p style="font-size: 0.95rem; color: grey;">Created: Mar 15, 2023. Last update: Nov 15, 2023. </p>
+    <p style="font-size: 0.95rem; color: grey;">Created: Mar 15, 2023. Last update: Jun 13, 2026. </p>
     <p style="font-size: 0.8rem; color: grey;">Disclaimer: This website is for educational and research purposes only and should not be used for medical applications. The owner disclaims any liability for actions taken based on the website's content or results. Always consult a healthcare professional for medical concerns. Use of this website indicates acceptance of these terms.</p>
 
 <!-- Add the rest of the content -->

@@ -1,117 +1,301 @@
-from flask import Flask, render_template, request, redirect, send_from_directory
-import requests
 import json
-import openai
-import re
-from dotenv import load_dotenv
 import os
-# from flask_talisman import Talisman
+import re
 
-app = Flask(__name__, static_folder='.')
+import requests
+from dotenv import load_dotenv
+from flask import Flask, jsonify, render_template, request, send_from_directory
+from openai import OpenAI, OpenAIError
 
-# csp = {
-#     'default-src': [
-#         '\'self\'',
-#         'stackpath.bootstrapcdn.com',
-#         'code.jquery.com',
-#         'cdn.jsdelivr.net',
-#     ],
-#     'img-src': '*',
-#     'style-src': [
-#         '\'self\'',
-#         'cdn.jsdelivr.net',
-#         '\'unsafe-inline\'',
-#     ],
-#     'script-src': [
-#         '\'self\'',
-#         'code.jquery.com',
-#         'cdn.jsdelivr.net',
-#     ],
-# }
-# talisman = Talisman(app, content_security_policy=csp)
 
-# To load the API key
 load_dotenv()
 
-@app.route('/.well-known/pki-validation/<filename>')
+app = Flask(__name__)
+
+MODEL_OPTIONS = [
+    {"id": "gpt-5.5", "label": "GPT-5.5"},
+    {"id": "gpt-5.4", "label": "GPT-5.4"},
+    {"id": "gpt-5.4-mini", "label": "GPT-5.4 mini"},
+]
+ALLOWED_MODELS = {model["id"] for model in MODEL_OPTIONS}
+DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+if DEFAULT_MODEL not in ALLOWED_MODELS:
+    DEFAULT_MODEL = "gpt-5.5"
+
+MAX_QUERY_LENGTH = 200
+MIN_RESULTS = 1
+MAX_RESULTS = 5
+DEFAULT_TEMPERATURE = 0.5
+
+
+class ModelResponseError(Exception):
+    pass
+
+
+BINDER_INSTRUCTIONS = (
+    "You are a knowledgeable and critical biochemist. Identify plausible "
+    "protein binding partners from known biology and literature-level "
+    "knowledge. Return only data that fits the supplied schema. Use confidence "
+    "scores from 0 to 100, where higher means stronger evidence for direct or "
+    "functionally relevant binding. If evidence is sparse, still return "
+    "plausible low-confidence candidates when useful, and explain the "
+    "uncertainty in the reasoning field. If the target is not a real protein "
+    "or no useful candidates can be identified, return an empty binders array "
+    "and put the reason in warning."
+)
+
+BINDER_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "name": "binding_partner_results",
+    "strict": True,
+    "schema": {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "binders": {
+                "type": "array",
+                "minItems": 0,
+                "maxItems": MAX_RESULTS,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "properties": {
+                        "name": {"type": "string"},
+                        "confidence_score": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 100,
+                        },
+                        "protein_function": {"type": "string"},
+                        "interaction_function": {"type": "string"},
+                        "reasoning": {"type": "string"},
+                    },
+                    "required": [
+                        "name",
+                        "confidence_score",
+                        "protein_function",
+                        "interaction_function",
+                        "reasoning",
+                    ],
+                },
+            },
+            "warning": {"type": "string"},
+        },
+        "required": ["binders", "warning"],
+    },
+}
+
+PURIFICATION_INSTRUCTIONS = (
+    "You are a biochemical protocol generator. Create a brief step-by-step "
+    "protein expression and purification protocol. Choose the expression "
+    "system and purification methods based on the origin and physicochemical "
+    "properties of the protein. Return only the protocol steps."
+)
+
+
+@app.route("/.well-known/pki-validation/<filename>")
 def serve_dcv_file(filename):
-    return send_from_directory('.well-known/pki-validation', filename)
+    return send_from_directory(".well-known/pki-validation", filename)
+
 
 def is_uniprot_id(input_string):
-    uniprot_id_pattern = re.compile(r"^[A-N,R-Z][0-9][A-Z][A-Z,0-9][A-Z][0-9]$")
+    uniprot_id_pattern = re.compile(r"^[A-NR-Z][0-9][A-Z][A-Z0-9][A-Z][0-9]$")
     return bool(uniprot_id_pattern.match(input_string))
 
+
 def get_protein_name(uniprot_id):
-    UNIPROT_API_URL = f"https://www.uniprot.org/uniprot/{uniprot_id}.xml"
-    response = requests.get(UNIPROT_API_URL)
+    uniprot_api_url = f"https://www.uniprot.org/uniprot/{uniprot_id}.xml"
+    response = requests.get(uniprot_api_url, timeout=10)
     if response.status_code == 200:
         try:
             from xml.etree import ElementTree as ET
+
             tree = ET.fromstring(response.content)
             for entry in tree.iter("{http://uniprot.org/uniprot}entry"):
                 for name in entry.iter("{http://uniprot.org/uniprot}fullName"):
                     return name.text
-        except Exception as e:
-            print(e)
+        except Exception as exc:
+            print(exc)
             return None
     return None
+
+
+def clamp(value, lower, upper):
+    return max(lower, min(value, upper))
+
+
+def get_api_key():
+    return os.environ.get("OPENAI_API_KEY") or os.environ.get("GPT_API_KEY")
+
+
+def get_openai_client():
+    api_key = get_api_key()
+    if not api_key:
+        raise RuntimeError("OpenAI API key is not configured.")
+    return OpenAI(api_key=api_key)
+
+
+def parse_prediction_form(form):
+    query = form.get("query", "").strip()
+    if not query:
+        raise ValueError("Enter a target protein name.")
+    if len(query) > MAX_QUERY_LENGTH:
+        raise ValueError(f"Target protein name must be {MAX_QUERY_LENGTH} characters or fewer.")
+
+    try:
+        temperature = float(form.get("temperature", DEFAULT_TEMPERATURE))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Wildness must be a number between 0 and 1.") from exc
+    temperature = clamp(temperature, 0.0, 1.0)
+
+    try:
+        number_of_results = int(form.get("number_of_results", MAX_RESULTS))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Number of hits must be a whole number from 1 to 5.") from exc
+    number_of_results = clamp(number_of_results, MIN_RESULTS, MAX_RESULTS)
+
+    model = form.get("model", DEFAULT_MODEL)
+    if model not in ALLOWED_MODELS:
+        raise ValueError("Choose a supported GPT model.")
+
+    return query, temperature, number_of_results, model
+
+
+def parse_binding_response(response_text, number_of_results):
+    try:
+        payload = json.loads(response_text)
+    except json.JSONDecodeError as exc:
+        raise ModelResponseError("The model returned an invalid response format.") from exc
+
+    raw_binders = payload.get("binders", [])
+    if not isinstance(raw_binders, list):
+        raise ModelResponseError("The model returned an invalid binder list.")
+
+    binders = []
+    for binder in raw_binders[:number_of_results]:
+        if not isinstance(binder, dict):
+            continue
+        try:
+            confidence_score = int(binder.get("confidence_score", 0))
+        except (TypeError, ValueError):
+            confidence_score = 0
+        binders.append(
+            {
+                "name": str(binder.get("name", "")).strip(),
+                "confidence_score": clamp(confidence_score, 0, 100),
+                "protein_function": str(binder.get("protein_function", "")).strip(),
+                "interaction_function": str(binder.get("interaction_function", "")).strip(),
+                "reasoning": str(binder.get("reasoning", "")).strip(),
+            }
+        )
+
+    warning = str(payload.get("warning", "")).strip()
+    return binders, warning
+
+
+def get_binding_partners(query, temperature, number_of_results, model, client=None):
+    client = client or get_openai_client()
+    response = client.responses.create(
+        model=model,
+        instructions=BINDER_INSTRUCTIONS,
+        input=(
+            f"Target protein: {query}\n"
+            f"Return exactly {number_of_results} candidate binders unless evidence is insufficient."
+        ),
+        max_output_tokens=500 + number_of_results * 250,
+        temperature=temperature,
+        reasoning={"effort": "low"},
+        text={"format": BINDER_RESPONSE_FORMAT, "verbosity": "low"},
+        store=False,
+    )
+    return parse_binding_response(response.output_text, number_of_results)
+
+
+def render_index(error=None, form=None, status_code=200):
+    form = form or {}
+    selected_model = form.get("model", DEFAULT_MODEL)
+    if selected_model not in ALLOWED_MODELS:
+        selected_model = DEFAULT_MODEL
+    return (
+        render_template(
+            "index.html",
+            error=error,
+            model_options=MODEL_OPTIONS,
+            selected_model=selected_model,
+            query_value=form.get("query", "SARS-Cov-2 Spike RBD"),
+            temperature_value=form.get("temperature", DEFAULT_TEMPERATURE),
+            number_of_results_value=form.get("number_of_results", MAX_RESULTS),
+        ),
+        status_code,
+    )
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        query = request.form["query"]
-        temperature = float(request.form["temperature"])
-        number_of_results = int(request.form["number_of_results"])
-        model_selection = str(request.form["model"])
-        openai.api_key = os.environ.get("GPT_API_KEY")
-        response = openai.ChatCompletion.create(
-                model=model_selection,
+        try:
+            query, temperature, number_of_results, model = parse_prediction_form(request.form)
+            binders, warning = get_binding_partners(query, temperature, number_of_results, model)
+        except ValueError as exc:
+            return render_index(str(exc), request.form, 400)
+        except RuntimeError as exc:
+            return render_index(str(exc), request.form, 500)
+        except OpenAIError:
+            return render_index(
+                "OpenAI could not complete the request. Please try again later.",
+                request.form,
+                502,
+            )
+        except ModelResponseError as exc:
+            return render_index(str(exc), request.form, 502)
 
-                messages = [
-                    {
-                        "role": "system",
-                        "content": "You are a knowledgeable and critical biochemist. You strictly adhere to format requirements."#" Be prepared to explain the function of the candidate protein, the function of the interaction, and your reasoning for considering it a potential binder. You start your response with the first binder and end it with the last binder without adding introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes" #You search in scientific literature to look for protein-protein interactions and evaluate the confidence of the interactions based on the literature, scoring it between 0-100 (e.g., CD4-gp120 is a 100, hemoglobin-hexokinase is a 0).
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Identify the top {number_of_results} potential protein binding partners for {query}. For each protein binder, provide the following five pieces of information separated by semicolons: the protein binder name, a confidence score (0-100) for the likelihood of the binding, the biological function of the protein binder, the possible biological function of the binding interaction, and your reasoning for considering it a true binder. Ensure that all five semicolon-separated pieces of information are present for each binder. Start your response directly with the first binder and end your response with the last binder. Do not provide introductory lines, row numbers, additional comments, column labels, summary lines, or additional notes. You can refuse to answer if you do not find any relavant info in literature." #The exception case for the format requirements: in case when the input {query} does not describe a real protein, return with an additional line of warning at the end: 'Note: GPT is uncertain whether { query } is a real protein.  Interpret the results with caution.'
-                    }
-                ],
+        return render_template(
+            "results.html",
+            query=query,
+            binders=binders,
+            warning=warning,
+            temperature=temperature,
+            model=model,
+        )
 
+    return render_index()
 
-                max_tokens=int(200 + number_of_results * 60), #for GPT-4, use 180 + n * 45
-                temperature=temperature
-                )
-
-
-        choices_text = [choice.strip() for choice in response['choices'][0]['message']['content'].strip().split("\n")[0:]]
-        #  purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
-        return render_template("results.html", query=query, choices=choices_text, temperature=temperature)#, purification_protocol=purification_protocol_text)
-    else:
-        return render_template("index.html", error=None)
 
 @app.route("/get_purification_protocol", methods=["POST"])
 def get_purification_protocol():
-    query = request.form["query"]
-    temperature = float(request.form["temperature"])
-    openai.api_key = os.environ.get("GPT_API_KEY")
-    purification_protocol = openai.ChatCompletion.create(
-            model="gpt-4-32k",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You act as a biochemical protocol generater. You will create a brief, step-by-step protocol to express and purify a protein. You will choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol."
-                },
-                {
-                    "role": "user",
-                    "content": f"Generate a brief, step-by-step protocol to express and purify {query}. Please choose the optimal expression system and optimal purification methods based on the origin and physicochemical properties of the protein for the protocol. Please just give the protocol and do not make other comments."
-                }
-            ],
-            max_tokens=2000,
-            temperature=temperature
-            )
-    purification_protocol_text = purification_protocol['choices'][0]['message']['content'].strip().split("\n")
-    return json.dumps(purification_protocol_text)
+    try:
+        query = request.form.get("query", "").strip()
+        if not query:
+            raise ValueError("Enter a target protein name.")
+        if len(query) > MAX_QUERY_LENGTH:
+            raise ValueError(f"Target protein name must be {MAX_QUERY_LENGTH} characters or fewer.")
+
+        try:
+            temperature = float(request.form.get("temperature", DEFAULT_TEMPERATURE))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Wildness must be a number between 0 and 1.") from exc
+        temperature = clamp(temperature, 0.0, 1.0)
+
+        client = get_openai_client()
+        response = client.responses.create(
+            model=DEFAULT_MODEL,
+            instructions=PURIFICATION_INSTRUCTIONS,
+            input=f"Generate a brief expression and purification protocol for {query}.",
+            max_output_tokens=2000,
+            temperature=temperature,
+            reasoning={"effort": "low"},
+            text={"verbosity": "medium"},
+            store=False,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 500
+    except OpenAIError:
+        return jsonify({"error": "OpenAI could not complete the request."}), 502
+
+    return jsonify([line for line in response.output_text.strip().splitlines() if line.strip()])
+
 
 if __name__ == "__main__":
     app.run(debug=True)
