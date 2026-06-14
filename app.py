@@ -15,9 +15,10 @@ app = Flask(__name__)
 
 MODEL_OPTIONS = [
     {"id": "gpt-5.5", "label": "GPT-5.5", "api": "responses"},
+    {"id": "gpt-5.4-mini", "label": "GPT-5.4-mini (fast)", "api": "responses"},
+    {"id": "gpt-4", "label": "GPT-4 (legacy)", "api": "chat"},
     {"id": "gpt-4-1106-preview", "label": "GPT-4-turbo (legacy)", "api": "chat"},
     {"id": "gpt-3.5-turbo", "label": "GPT-3.5-turbo (legacy)", "api": "chat"},
-    {"id": "gpt-4", "label": "GPT-4 (legacy)", "api": "chat"},
 ]
 MODEL_CONFIGS = {model["id"]: model for model in MODEL_OPTIONS}
 ALLOWED_MODELS = set(MODEL_CONFIGS)

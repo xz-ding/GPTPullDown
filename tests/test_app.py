@@ -177,14 +177,15 @@ class AppTests(unittest.TestCase):
         self.assertEqual(call["temperature"], 0.7)
         self.assertIn("max_tokens", call)
 
-    def test_model_options_keep_only_gpt55_as_modern_model(self):
+    def test_model_options_match_dropdown_order(self):
         model_ids = [model["id"] for model in app_module.MODEL_OPTIONS]
 
         self.assertEqual(
             model_ids,
-            ["gpt-5.5", "gpt-4-1106-preview", "gpt-3.5-turbo", "gpt-4"],
+            ["gpt-5.5", "gpt-5.4-mini", "gpt-4", "gpt-4-1106-preview", "gpt-3.5-turbo"],
         )
         self.assertEqual(app_module.MODEL_CONFIGS["gpt-5.5"]["api"], "responses")
+        self.assertEqual(app_module.MODEL_CONFIGS["gpt-5.4-mini"]["api"], "responses")
         self.assertEqual(app_module.MODEL_CONFIGS["gpt-3.5-turbo"]["api"], "chat")
 
     def test_index_rejects_unknown_model_before_openai_call(self):
