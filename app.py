@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 
@@ -13,11 +14,13 @@ load_dotenv()
 app = Flask(__name__)
 
 MODEL_OPTIONS = [
-    {"id": "gpt-5.5", "label": "GPT-5.5"},
-    {"id": "gpt-5.4", "label": "GPT-5.4"},
-    {"id": "gpt-5.4-mini", "label": "GPT-5.4 mini"},
+    {"id": "gpt-5.5", "label": "GPT-5.5", "api": "responses"},
+    {"id": "gpt-4-1106-preview", "label": "GPT-4-turbo (legacy)", "api": "chat"},
+    {"id": "gpt-3.5-turbo", "label": "GPT-3.5-turbo (legacy)", "api": "chat"},
+    {"id": "gpt-4", "label": "GPT-4 (legacy)", "api": "chat"},
 ]
-ALLOWED_MODELS = {model["id"] for model in MODEL_OPTIONS}
+MODEL_CONFIGS = {model["id"]: model for model in MODEL_OPTIONS}
+ALLOWED_MODELS = set(MODEL_CONFIGS)
 DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
 if DEFAULT_MODEL not in ALLOWED_MODELS:
     DEFAULT_MODEL = "gpt-5.5"
@@ -42,6 +45,15 @@ BINDER_INSTRUCTIONS = (
     "uncertainty in the reasoning field. If the target is not a real protein "
     "or no useful candidates can be identified, return an empty binders array "
     "and put the reason in warning."
+)
+
+LEGACY_BINDER_INSTRUCTIONS = (
+    "You are a knowledgeable and critical biochemist. Return only a valid JSON "
+    "object with this exact shape: {\"binders\": [{\"name\": string, "
+    "\"confidence_score\": integer, \"protein_function\": string, "
+    "\"interaction_function\": string, \"reasoning\": string}], "
+    "\"warning\": string}. Do not include markdown, comments, introductory "
+    "text, or any keys besides binders and warning."
 )
 
 BINDER_RESPONSE_FORMAT = {
@@ -193,8 +205,7 @@ def parse_binding_response(response_text, number_of_results):
     return binders, warning
 
 
-def get_binding_partners(query, temperature, number_of_results, model, client=None):
-    client = client or get_openai_client()
+def get_binding_partners_with_responses(client, query, number_of_results, model):
     response = client.responses.create(
         model=model,
         instructions=BINDER_INSTRUCTIONS,
@@ -203,12 +214,46 @@ def get_binding_partners(query, temperature, number_of_results, model, client=No
             f"Return exactly {number_of_results} candidate binders unless evidence is insufficient."
         ),
         max_output_tokens=500 + number_of_results * 250,
-        temperature=temperature,
         reasoning={"effort": "low"},
         text={"format": BINDER_RESPONSE_FORMAT, "verbosity": "low"},
         store=False,
     )
-    return parse_binding_response(response.output_text, number_of_results)
+    return response.output_text
+
+
+def get_binding_partners_with_chat(client, query, temperature, number_of_results, model):
+    response = client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": LEGACY_BINDER_INSTRUCTIONS},
+            {
+                "role": "user",
+                "content": (
+                    f"Identify the top {number_of_results} potential protein binding partners "
+                    f"for {query}. Return JSON only."
+                ),
+            },
+        ],
+        max_tokens=500 + number_of_results * 250,
+        temperature=temperature,
+    )
+    return response.choices[0].message.content
+
+
+def get_binding_partners(query, temperature, number_of_results, model, client=None):
+    client = client or get_openai_client()
+    model_api = MODEL_CONFIGS[model]["api"]
+    if model_api == "responses":
+        response_text = get_binding_partners_with_responses(client, query, number_of_results, model)
+    else:
+        response_text = get_binding_partners_with_chat(
+            client,
+            query,
+            temperature,
+            number_of_results,
+            model,
+        )
+    return parse_binding_response(response_text, number_of_results)
 
 
 def render_index(error=None, form=None, status_code=200):
@@ -240,7 +285,8 @@ def index():
             return render_index(str(exc), request.form, 400)
         except RuntimeError as exc:
             return render_index(str(exc), request.form, 500)
-        except OpenAIError:
+        except OpenAIError as exc:
+            logging.exception("OpenAI request failed for model %s: %s", request.form.get("model"), exc)
             return render_index(
                 "OpenAI could not complete the request. Please try again later.",
                 request.form,
@@ -282,7 +328,6 @@ def get_purification_protocol():
             instructions=PURIFICATION_INSTRUCTIONS,
             input=f"Generate a brief expression and purification protocol for {query}.",
             max_output_tokens=2000,
-            temperature=temperature,
             reasoning={"effort": "low"},
             text={"verbosity": "medium"},
             store=False,
@@ -291,7 +336,8 @@ def get_purification_protocol():
         return jsonify({"error": str(exc)}), 400
     except RuntimeError as exc:
         return jsonify({"error": str(exc)}), 500
-    except OpenAIError:
+    except OpenAIError as exc:
+        logging.exception("OpenAI purification request failed: %s", exc)
         return jsonify({"error": "OpenAI could not complete the request."}), 502
 
     return jsonify([line for line in response.output_text.strip().splitlines() if line.strip()])

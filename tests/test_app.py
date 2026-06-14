@@ -20,9 +20,40 @@ class FakeResponses:
         return FakeResponse(self.output_text)
 
 
+class FakeMessage:
+    def __init__(self, content):
+        self.content = content
+
+
+class FakeChoice:
+    def __init__(self, content):
+        self.message = FakeMessage(content)
+
+
+class FakeChatResponse:
+    def __init__(self, content):
+        self.choices = [FakeChoice(content)]
+
+
+class FakeChatCompletions:
+    def __init__(self, output_text):
+        self.output_text = output_text
+        self.calls = []
+
+    def create(self, **kwargs):
+        self.calls.append(kwargs)
+        return FakeChatResponse(self.output_text)
+
+
+class FakeChat:
+    def __init__(self, output_text):
+        self.completions = FakeChatCompletions(output_text)
+
+
 class FakeClient:
     def __init__(self, output_text):
         self.responses = FakeResponses(output_text)
+        self.chat = FakeChat(output_text)
 
 
 class AppTests(unittest.TestCase):
@@ -110,7 +141,51 @@ class AppTests(unittest.TestCase):
         self.assertEqual(call["model"], "gpt-5.5")
         self.assertEqual(call["text"]["format"]["name"], "binding_partner_results")
         self.assertEqual(call["reasoning"]["effort"], "low")
+        self.assertNotIn("temperature", call)
         self.assertFalse(call["store"])
+
+    def test_get_binding_partners_uses_chat_completions_for_legacy_models(self):
+        fake_client = FakeClient(
+            json.dumps(
+                {
+                    "binders": [
+                        {
+                            "name": "SOS1",
+                            "confidence_score": 85,
+                            "protein_function": "GEF",
+                            "interaction_function": "Activates RAS",
+                            "reasoning": "Canonical RAS regulator.",
+                        }
+                    ],
+                    "warning": "",
+                }
+            )
+        )
+
+        binders, _ = app_module.get_binding_partners(
+            "Ras",
+            0.7,
+            1,
+            "gpt-3.5-turbo",
+            client=fake_client,
+        )
+
+        self.assertEqual(binders[0]["name"], "SOS1")
+        self.assertEqual(fake_client.responses.calls, [])
+        call = fake_client.chat.completions.calls[0]
+        self.assertEqual(call["model"], "gpt-3.5-turbo")
+        self.assertEqual(call["temperature"], 0.7)
+        self.assertIn("max_tokens", call)
+
+    def test_model_options_keep_only_gpt55_as_modern_model(self):
+        model_ids = [model["id"] for model in app_module.MODEL_OPTIONS]
+
+        self.assertEqual(
+            model_ids,
+            ["gpt-5.5", "gpt-4-1106-preview", "gpt-3.5-turbo", "gpt-4"],
+        )
+        self.assertEqual(app_module.MODEL_CONFIGS["gpt-5.5"]["api"], "responses")
+        self.assertEqual(app_module.MODEL_CONFIGS["gpt-3.5-turbo"]["api"], "chat")
 
     def test_index_rejects_unknown_model_before_openai_call(self):
         with patch.object(app_module, "get_binding_partners") as get_binding_partners:
