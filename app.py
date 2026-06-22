@@ -12,6 +12,7 @@ from openai import OpenAI, OpenAIError
 load_dotenv()
 
 app = Flask(__name__)
+ASSET_DIR = os.path.join(app.root_path, "gpt-pulldown-exact-assets")
 
 MODEL_OPTIONS = [
     {"id": "gpt-5.5", "label": "GPT-5.5", "api": "responses"},
@@ -109,6 +110,16 @@ PURIFICATION_INSTRUCTIONS = (
 @app.route("/.well-known/pki-validation/<filename>")
 def serve_dcv_file(filename):
     return send_from_directory(".well-known/pki-validation", filename)
+
+
+@app.route("/assets/<path:filename>")
+def site_asset(filename):
+    return send_from_directory(ASSET_DIR, filename)
+
+
+@app.route("/favicon.ico")
+def favicon():
+    return send_from_directory(ASSET_DIR, "favicon.ico")
 
 
 def is_uniprot_id(input_string):

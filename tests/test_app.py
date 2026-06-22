@@ -207,6 +207,29 @@ class AppTests(unittest.TestCase):
         self.assertEqual(self.client.get("/app.py").status_code, 404)
         self.assertEqual(self.client.get("/.env").status_code, 404)
 
+    def test_brand_assets_are_served_from_assets_route(self):
+        logo_response = self.client.get("/assets/logo-horizontal-tight.png")
+        favicon_response = self.client.get("/favicon.ico")
+
+        try:
+            self.assertEqual(logo_response.status_code, 200)
+            self.assertEqual(favicon_response.status_code, 200)
+            self.assertEqual(logo_response.mimetype, "image/png")
+            self.assertIn(favicon_response.mimetype, {"image/vnd.microsoft.icon", "image/x-icon"})
+        finally:
+            logo_response.close()
+            favicon_response.close()
+
+    def test_homepage_includes_brand_head_links_and_logo(self):
+        response = self.client.get("/")
+        html = response.get_data(as_text=True)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('/assets/favicon.svg', html)
+        self.assertIn('/assets/apple-touch-icon.png', html)
+        self.assertIn('/assets/site.webmanifest', html)
+        self.assertIn('/assets/logo-horizontal-tight.png', html)
+
 
 if __name__ == "__main__":
     unittest.main()
